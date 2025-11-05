@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Postpartum Symptoms Matching Game</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            touch-action: manipulation;
+        }
+        
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+            min-height: 44px;
+        }
+        
+        #submit-answers{
+            background-color: #dba934;
+            width:100%;
+            border-radius: 10px;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        
+        .game-area {
+            display: none;
+        }
+        
+        .timer {
+            text-align: center;
+            font-size: 24px;
+            margin-bottom: 20px;
+            font-weight: bold;
+            color: #e74c3c;
+        }
+        
+        .categories {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        @media (min-width: 768px) {
+            .categories {
+                flex-direction: row;
+                justify-content: space-between;
+            }
+        }
+        
+        .category {
+            width: 100%;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        @media (min-width: 768px) {
+            .category {
+                width: 48%;
+            }
+        }
+        
+        .category h3 {
+            text-align: center;
+            margin-top: 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #ddd;
+        }
+        
+        .normal h3 {
+            color: #27ae60;
+        }
+        
+        .warning h3 {
+            color: #e74c3c;
+        }
+        
+        .drop-zone {
+            min-height: 150px;
+            border: 2px dashed #ccc;
+            border-radius: 5px;
+            padding: 10px;
+            margin-top: 10px;
+        }
+        
+        .symptoms-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .symptom {
+            background-color: #3498db;
+            color: white;
+            padding: 12px 16px;
+            border-radius: 20px;
+            cursor: grab;
+            user-select: none;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            font-size: 14px;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+        
+        .symptom.dragging {
+            opacity: 0.5;
+        }
+        
+        .dropped-symptom {
+            background-color: #2ecc71;
+            color: white;
+            padding: 10px 14px;
+            border-radius: 15px;
+            margin: 5px;
+            display: inline-block;
+            font-size: 14px;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .submit-button {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .completion-message {
+            text-align: center;
+            display: none;
+            padding: 20px;
+            background-color: #d4edda;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        
+        .completion-message h2 {
+            color: #155724;
+        }
+        
+        .error-message {
+            color: #e74c3c;
+            margin-top: 5px;
+            display: none;
+        }
+        
+        .results-message {
+            text-align: center;
+            display: none;
+            padding: 20px;
+            background-color: #fff3cd;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        
+        .results-message h2 {
+            color: #856404;
+        }
+        
+        .remove-symptom {
+            margin-left: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+            min-width: 20px;
+            min-height: 20px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .saving-indicator {
+            display: none;
+            text-align: center;
+            color: #3498db;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Registration Form -->
+        <div id="registration-form">
+            <h1>Postpartum Symptoms Matching Game</h1>
+            <div class="form-group">
+                <label for="player-name">Enter your name:</label>
+                <input type="text" id="player-name" placeholder="Your name">
+                <div id="name-error" class="error-message">Please enter your name</div>
+            </div>
+            <button id="start-game">Start Game</button>
+        </div>
+        
+        <!-- Game Area -->
+        <div id="game-area" class="game-area">
+            <div class="timer">
+                Time: <span id="time">0</span> seconds
+            </div>
+            
+            <div class="categories">
+                <div class="category normal">
+                    <h3>Normal Postpartum Changes</h3>
+                    <div class="drop-zone" id="normal-drop-zone"></div>
+                </div>
+                <div class="category warning">
+                    <h3>Warning Postpartum Signs</h3>
+                    <div class="drop-zone" id="warning-drop-zone"></div>
+                </div>
+            </div>
+            
+            <div class="symptoms-container" id="symptoms-container">
+                <!-- Symptoms will be added here dynamically -->
+            </div>
+            
+            <div class="submit-button">
+                <button id="submit-answers">Submit Answers</button>
+                <div id="saving-indicator" class="saving-indicator">Saving your results...</div>
+            </div>
+            
+            <div id="completion-message" class="completion-message">
+                <h2>Congratulations!</h2>
+                <p>You've successfully matched all symptoms to the correct categories!</p>
+                <p>Your time: <span id="final-time">0</span> seconds</p>
+                <p>Your results have been saved successfully!</p>
+            </div>
+            
+            <div id="results-message" class="results-message">
+                <h2>Results</h2>
+                <p id="score-message"></p>
+                <p>Please correct your answers and submit again!</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // Game data
+    const symptoms = {
+        normal: [
+            "Bleeding or vaginal discharge",
+            "Uterine contractions",
+            "Discomfort in the perineal area",
+            "Perspiration (sweating)",
+            "Breast soreness"
+        ],
+        warning: [
+            "Fever",
+            "Sever bleeding",
+            "Trouble urination",
+            "Foul-smelling vaginal Discharge",
+            "Wound opening"
+        ]
+    };
+
+    // Game state
+    let gameState = {
+        playerName: "",
+        startTime: 0,
+        timerInterval: null,
+        elapsedTime: 0,
+        matchedSymptoms: {
+            normal: [],
+            warning: []
+        },
+        submitted: false
+    };
+
+    // DOM elements
+    const registrationForm = document.getElementById('registration-form');
+    const gameArea = document.getElementById('game-area');
+    const playerNameInput = document.getElementById('player-name');
+    const startGameButton = document.getElementById('start-game');
+    const nameError = document.getElementById('name-error');
+    const timerDisplay = document.getElementById('time');
+    const symptomsContainer = document.getElementById('symptoms-container');
+    const normalDropZone = document.getElementById('normal-drop-zone');
+    const warningDropZone = document.getElementById('warning-drop-zone');
+    const submitButton = document.getElementById('submit-answers');
+    const completionMessage = document.getElementById('completion-message');
+    const resultsMessage = document.getElementById('results-message');
+    const scoreMessage = document.getElementById('score-message');
+    const finalTimeDisplay = document.getElementById('final-time');
+    const savingIndicator = document.getElementById('saving-indicator');
+
+    // Event listeners
+    startGameButton.addEventListener('click', startGame);
+    submitButton.addEventListener('click', submitAnswers);
+
+    // Functions
+    function startGame() {
+        const name = playerNameInput.value.trim();
+        
+        if (!name) {
+            nameError.style.display = 'block';
+            return;
+        }
+        
+        nameError.style.display = 'none';
+        gameState.playerName = name;
+        
+        // Show game area
+        registrationForm.style.display = 'none';
+        gameArea.style.display = 'block';
+        
+        // Start timer
+        startTimer();
+        
+        // Initialize game
+        initializeGame();
+    }
+
+    function startTimer() {
+        gameState.startTime = Date.now();
+        gameState.timerInterval = setInterval(() => {
+            gameState.elapsedTime = Math.floor((Date.now() - gameState.startTime) / 1000);
+            timerDisplay.textContent = gameState.elapsedTime;
+        }, 1000);
+    }
+
+    function stopTimer() {
+        clearInterval(gameState.timerInterval);
+    }
+
+    function initializeGame() {
+        // Reset game state
+        gameState.matchedSymptoms = {
+            normal: [],
+            warning: []
+        };
+        gameState.submitted = false;
+        
+        // Clear drop zones
+        normalDropZone.innerHTML = '';
+        warningDropZone.innerHTML = '';
+        
+        // Hide messages and show submit button
+        completionMessage.style.display = 'none';
+        resultsMessage.style.display = 'none';
+        savingIndicator.style.display = 'none';
+        submitButton.style.display = 'block';
+        submitButton.disabled = false;
+        
+        // Create shuffled list of all symptoms
+        const allSymptoms = [...symptoms.normal, ...symptoms.warning];
+        shuffleArray(allSymptoms);
+        
+        // Create draggable symptom elements
+        symptomsContainer.innerHTML = '';
+        allSymptoms.forEach(symptom => {
+            const symptomElement = createSymptomElement(symptom);
+            symptomsContainer.appendChild(symptomElement);
+        });
+        
+        // Set up drop zones
+        setupDropZone(normalDropZone, 'normal');
+        setupDropZone(warningDropZone, 'warning');
+        
+        // Setup mobile touch events
+        setupTouchEvents();
+    }
+
+    function createSymptomElement(symptom) {
+        const symptomElement = document.createElement('div');
+        symptomElement.className = 'symptom';
+        symptomElement.textContent = symptom;
+        symptomElement.draggable = true;
+        
+        symptomElement.addEventListener('dragstart', (e) => {
+            e.dataTransfer.setData('text/plain', symptom);
+            symptomElement.classList.add('dragging');
+        });
+        
+        symptomElement.addEventListener('dragend', () => {
+            symptomElement.classList.remove('dragging');
+        });
+        
+        return symptomElement;
+    }
+
+    function setupDropZone(dropZone, category) {
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = '#3498db';
+        });
+        
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.style.borderColor = '#ccc';
+        });
+        
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = '#ccc';
+            
+            const symptom = e.dataTransfer.getData('text/plain');
+            handleDrop(symptom, category, dropZone);
+        });
+        
+        // Touch events for mobile
+        dropZone.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+        });
+        
+        dropZone.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            const touch = e.changedTouches[0];
+            const element = document.elementFromPoint(touch.clientX, touch.clientY);
+            
+            if (element && element.classList.contains('symptom')) {
+                const symptom = element.textContent;
+                handleDrop(symptom, category, dropZone);
+            }
+        });
+    }
+
+    function handleDrop(symptom, category, dropZone) {
+        // Check if symptom is already placed
+        if (gameState.matchedSymptoms.normal.includes(symptom) || 
+            gameState.matchedSymptoms.warning.includes(symptom)) {
+            return;
+        }
+        
+        // Add to matched symptoms
+        gameState.matchedSymptoms[category].push(symptom);
+        
+        // Create dropped symptom element with remove button
+        const droppedSymptom = document.createElement('div');
+        droppedSymptom.className = 'dropped-symptom';
+        droppedSymptom.textContent = symptom;
+        
+        const removeButton = document.createElement('span');
+        removeButton.className = 'remove-symptom';
+        removeButton.textContent = '×';
+        removeButton.title = 'Remove symptom';
+        removeButton.addEventListener('click', (e) => {
+            e.stopPropagation();
+            removeSymptom(symptom, category, droppedSymptom);
+        });
+        
+        // Add touch event for remove button on mobile
+        removeButton.addEventListener('touchend', (e) => {
+            e.stopPropagation();
+            removeSymptom(symptom, category, droppedSymptom);
+        });
+        
+        droppedSymptom.appendChild(removeButton);
+        dropZone.appendChild(droppedSymptom);
+        
+        // Remove from available symptoms
+        const symptomElements = document.querySelectorAll('.symptom');
+        symptomElements.forEach(el => {
+            if (el.textContent === symptom) {
+                el.remove();
+            }
+        });
+    }
+
+    function setupTouchEvents() {
+        let touchElement = null;
+        
+        document.addEventListener('touchstart', (e) => {
+            if (e.target.classList.contains('symptom')) {
+                touchElement = e.target;
+                touchElement.style.opacity = '0.5';
+            }
+        });
+        
+        document.addEventListener('touchend', (e) => {
+            if (touchElement) {
+                touchElement.style.opacity = '1';
+                touchElement = null;
+            }
+        });
+        
+        document.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+        });
+    }
+
+    function removeSymptom(symptom, category, element) {
+        // Remove from matched symptoms
+        const index = gameState.matchedSymptoms[category].indexOf(symptom);
+        if (index > -1) {
+            gameState.matchedSymptoms[category].splice(index, 1);
+        }
+        
+        // Remove from DOM
+        element.remove();
+        
+        // Add back to available symptoms
+        const symptomElement = createSymptomElement(symptom);
+        symptomsContainer.appendChild(symptomElement);
+    }
+
+    async function submitAnswers() {
+        if (gameState.submitted) return;
+        
+        // Check if all symptoms are placed
+        const totalPlaced = gameState.matchedSymptoms.normal.length + gameState.matchedSymptoms.warning.length;
+        const totalSymptoms = symptoms.normal.length + symptoms.warning.length;
+        
+        if (totalPlaced < totalSymptoms) {
+            scoreMessage.textContent = `You placed ${totalPlaced} out of ${totalSymptoms} symptoms. Please place all symptoms before submitting.`;
+            resultsMessage.style.display = 'block';
+            return;
+        }
+        
+        // Calculate score
+        let correctCount = 0;
+        
+        // Check normal symptoms
+        gameState.matchedSymptoms.normal.forEach(symptom => {
+            if (symptoms.normal.includes(symptom)) {
+                correctCount++;
+            }
+        });
+        
+        // Check warning symptoms
+        gameState.matchedSymptoms.warning.forEach(symptom => {
+            if (symptoms.warning.includes(symptom)) {
+                correctCount++;
+            }
+        });
+        
+        // Show results
+        if (correctCount === totalSymptoms) {
+            // All correct - show congratulations and save to Google Sheets
+            gameState.submitted = true;
+            stopTimer();
+            finalTimeDisplay.textContent = gameState.elapsedTime;
+            
+            // Disable submit button and show saving indicator
+            submitButton.disabled = true;
+            savingIndicator.style.display = 'block';
+            
+            try {
+                // Save to Google Sheets
+                await saveToGoogleSheets();
+                
+                // Show success message
+                completionMessage.style.display = 'block';
+                resultsMessage.style.display = 'none';
+                savingIndicator.style.display = 'none';
+                
+            } catch (error) {
+                // Handle error - still show congratulations but indicate save failed
+                completionMessage.style.display = 'block';
+                completionMessage.innerHTML = `
+                    <h2>Congratulations!</h2>
+                    <p>You've successfully matched all symptoms to the correct categories!</p>
+                    <p>Your time: <span id="final-time">${gameState.elapsedTime}</span> seconds</p>
+                    <p style="color: #e74c3c;">Note: There was an issue saving your results, but your completion has been recorded locally.</p>
+                `;
+                savingIndicator.style.display = 'none';
+                console.error('Error saving to Google Sheets:', error);
+            }
+        } else {
+            // Some incorrect - show score and allow retry
+            scoreMessage.textContent = `${correctCount}/${totalSymptoms} are correct.`;
+            resultsMessage.style.display = 'block';
+            // Submit button remains visible for retry
+        }
+    }
+
+    function saveToGoogleSheets() {
+        return new Promise((resolve, reject) => {
+            const webAppUrl = 'https://script.google.com/macros/s/AKfycbwYw-DtvtAXKW01BbHAENQHXzYdnxA2VRiIz6dq41ZO7w6J6YdYrrtK5013RMWXDqGY/exec';
+            
+            // Create a hidden iframe to handle the form submission
+            const iframe = document.createElement('iframe');
+            iframe.name = 'google-sheets-submit';
+            iframe.style.display = 'none';
+            document.body.appendChild(iframe);
+            
+            // Create form
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = webAppUrl;
+            form.target = 'google-sheets-submit';
+            form.style.display = 'none';
+            
+            // Add name field
+            const nameInput = document.createElement('input');
+            nameInput.name = 'name';
+            nameInput.value = gameState.playerName;
+            form.appendChild(nameInput);
+            
+            // Add time field
+            const timeInput = document.createElement('input');
+            timeInput.name = 'time';
+            timeInput.value = gameState.elapsedTime;
+            form.appendChild(timeInput);
+            
+            // Add to document and submit
+            document.body.appendChild(form);
+            form.submit();
+            
+            // Clean up and resolve after a short delay
+            setTimeout(() => {
+                document.body.removeChild(form);
+                document.body.removeChild(iframe);
+                resolve();
+            }, 2000);
+        });
+    }
+
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    }
+</script>
+</body>
+</html>
