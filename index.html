@@ -338,7 +338,16 @@
 
     // Event listeners
     startGameButton.addEventListener('click', startGame);
+    startGameButton.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        startGame();
+    });
+    
     submitButton.addEventListener('click', submitAnswers);
+    submitButton.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        submitAnswers();
+    });
 
     // Functions
     function startGame() {
