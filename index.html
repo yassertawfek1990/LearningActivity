@@ -534,6 +534,7 @@
                 }
                 
                 if (isDragging) {
+                    e.preventDefault(); // Prevent scrolling while dragging
                     updateClonePosition(touch.clientX, touch.clientY);
                     
                     // Highlight drop zones when dragging over them
@@ -547,7 +548,7 @@
                     }
                 }
             }
-        }, { passive: true });
+        });
         
         document.addEventListener('touchend', (e) => {
             if (touchElement && isDragging) {
