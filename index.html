@@ -133,6 +133,7 @@
             border-radius: 5px;
             padding: 10px;
             margin-top: 10px;
+            transition: border-color 0.3s;
         }
         
         .symptoms-container {
@@ -156,6 +157,7 @@
             align-items: center;
             justify-content: center;
             text-align: center;
+            transition: opacity 0.2s;
         }
         
         .symptom.dragging {
@@ -168,11 +170,10 @@
             padding: 10px 14px;
             border-radius: 15px;
             margin: 5px;
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
             font-size: 14px;
             min-height: 44px;
-            display: flex;
-            align-items: center;
         }
         
         .submit-button {
@@ -447,22 +448,6 @@
             const symptom = e.dataTransfer.getData('text/plain');
             handleDrop(symptom, category, dropZone);
         });
-        
-        // Touch events for mobile
-        dropZone.addEventListener('touchmove', (e) => {
-            e.preventDefault();
-        });
-        
-        dropZone.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            const touch = e.changedTouches[0];
-            const element = document.elementFromPoint(touch.clientX, touch.clientY);
-            
-            if (element && element.classList.contains('symptom')) {
-                const symptom = element.textContent;
-                handleDrop(symptom, category, dropZone);
-            }
-        });
     }
 
     function handleDrop(symptom, category, dropZone) {
@@ -492,6 +477,7 @@
         // Add touch event for remove button on mobile
         removeButton.addEventListener('touchend', (e) => {
             e.stopPropagation();
+            e.preventDefault();
             removeSymptom(symptom, category, droppedSymptom);
         });
         
@@ -509,24 +495,101 @@
 
     function setupTouchEvents() {
         let touchElement = null;
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let isDragging = false;
+        let clone = null;
         
-        document.addEventListener('touchstart', (e) => {
+        symptomsContainer.addEventListener('touchstart', (e) => {
             if (e.target.classList.contains('symptom')) {
                 touchElement = e.target;
-                touchElement.style.opacity = '0.5';
+                const touch = e.touches[0];
+                touchStartX = touch.clientX;
+                touchStartY = touch.clientY;
+                isDragging = false;
+                
+                // Create a visual clone that follows the finger
+                clone = touchElement.cloneNode(true);
+                clone.style.position = 'fixed';
+                clone.style.pointerEvents = 'none';
+                clone.style.zIndex = '1000';
+                clone.style.opacity = '0.8';
+                clone.style.width = touchElement.offsetWidth + 'px';
+                document.body.appendChild(clone);
+                updateClonePosition(touch.clientX, touch.clientY);
+                
+                touchElement.style.opacity = '0.3';
             }
-        });
-        
-        document.addEventListener('touchend', (e) => {
-            if (touchElement) {
-                touchElement.style.opacity = '1';
-                touchElement = null;
-            }
-        });
+        }, { passive: true });
         
         document.addEventListener('touchmove', (e) => {
-            e.preventDefault();
-        });
+            if (touchElement && clone) {
+                const touch = e.touches[0];
+                const moveX = Math.abs(touch.clientX - touchStartX);
+                const moveY = Math.abs(touch.clientY - touchStartY);
+                
+                // Start dragging if moved more than 5px
+                if (moveX > 5 || moveY > 5) {
+                    isDragging = true;
+                }
+                
+                if (isDragging) {
+                    updateClonePosition(touch.clientX, touch.clientY);
+                    
+                    // Highlight drop zones when dragging over them
+                    const element = document.elementFromPoint(touch.clientX, touch.clientY);
+                    document.querySelectorAll('.drop-zone').forEach(zone => {
+                        zone.style.borderColor = '#ccc';
+                    });
+                    
+                    if (element && element.classList.contains('drop-zone')) {
+                        element.style.borderColor = '#3498db';
+                    }
+                }
+            }
+        }, { passive: true });
+        
+        document.addEventListener('touchend', (e) => {
+            if (touchElement && isDragging) {
+                const touch = e.changedTouches[0];
+                const element = document.elementFromPoint(touch.clientX, touch.clientY);
+                
+                // Check if dropped on a drop zone
+                if (element) {
+                    const dropZone = element.classList.contains('drop-zone') ? 
+                        element : element.closest('.drop-zone');
+                    
+                    if (dropZone) {
+                        const category = dropZone.id === 'normal-drop-zone' ? 'normal' : 'warning';
+                        const symptom = touchElement.textContent;
+                        handleDrop(symptom, category, dropZone);
+                    }
+                }
+                
+                // Reset all drop zone borders
+                document.querySelectorAll('.drop-zone').forEach(zone => {
+                    zone.style.borderColor = '#ccc';
+                });
+            }
+            
+            // Clean up
+            if (touchElement) {
+                touchElement.style.opacity = '1';
+            }
+            if (clone) {
+                document.body.removeChild(clone);
+            }
+            touchElement = null;
+            clone = null;
+            isDragging = false;
+        }, { passive: true });
+        
+        function updateClonePosition(x, y) {
+            if (clone) {
+                clone.style.left = (x - clone.offsetWidth / 2) + 'px';
+                clone.style.top = (y - clone.offsetHeight / 2) + 'px';
+            }
+        }
     }
 
     function removeSymptom(symptom, category, element) {
