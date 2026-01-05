@@ -14,7 +14,7 @@
         body {
             margin: 0;
             padding: 20px;
-            background-color: black;
+            background-color: #f5f5f5;
             color: #333;
         }
         
@@ -502,6 +502,7 @@
         
         symptomsContainer.addEventListener('touchstart', (e) => {
             if (e.target.classList.contains('symptom')) {
+                e.preventDefault(); // Prevent scrolling immediately when touching a symptom
                 touchElement = e.target;
                 const touch = e.touches[0];
                 touchStartX = touch.clientX;
@@ -520,7 +521,7 @@
                 
                 touchElement.style.opacity = '0.3';
             }
-        }, { passive: true });
+        });
         
         document.addEventListener('touchmove', (e) => {
             if (touchElement && clone) {
@@ -552,6 +553,7 @@
         
         document.addEventListener('touchend', (e) => {
             if (touchElement && isDragging) {
+                e.preventDefault();
                 const touch = e.changedTouches[0];
                 const element = document.elementFromPoint(touch.clientX, touch.clientY);
                 
@@ -583,7 +585,7 @@
             touchElement = null;
             clone = null;
             isDragging = false;
-        }, { passive: true });
+        });
         
         function updateClonePosition(x, y) {
             if (clone) {
